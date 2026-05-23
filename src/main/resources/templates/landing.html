@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>FútbolJPA | Gestión de Clubes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --verde:    #1a7c3e;
+            --verde-d:  #0f5229;
+            --verde-l:  #e8f5ee;
+            --amarillo: #f5c518;
+            --gris-bg:  #f4f6f9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Source Sans 3', sans-serif; background: #0a0f0d; color: white; overflow-x: hidden; }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            background: rgba(10,15,13,.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(26,124,62,.3);
+            position: fixed; top: 0; width: 100%; z-index: 100;
+        }
+        .navbar-brand {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.5rem;
+            color: var(--amarillo) !important;
+            letter-spacing: 1px;
+        }
+        .nav-link { color: #b0c4b8 !important; transition: color .2s; }
+        .nav-link:hover { color: var(--amarillo) !important; }
+        .btn-nav {
+            background: var(--verde);
+            color: white !important;
+            border-radius: 6px;
+            padding: .35rem 1.1rem;
+            font-weight: 600;
+            transition: background .2s;
+        }
+        .btn-nav:hover { background: var(--amarillo); color: #0a0f0d !important; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(26,124,62,.25) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(245,197,24,.08) 0%, transparent 50%),
+                linear-gradient(160deg, #0a0f0d 0%, #0d1f14 50%, #0a0f0d 100%);
+            display: flex;
+            align-items: center;
+            padding-top: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(26,124,62,.04) 60px, rgba(26,124,62,.04) 61px),
+                repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(26,124,62,.04) 60px, rgba(26,124,62,.04) 61px);
+        }
+        .hero-tag {
+            display: inline-block;
+            background: rgba(245,197,24,.15);
+            border: 1px solid rgba(245,197,24,.4);
+            color: var(--amarillo);
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: .3rem .9rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: clamp(2.8rem, 7vw, 5.5rem);
+            font-weight: 700;
+            line-height: 1.05;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 span { color: var(--amarillo); }
+        .hero p {
+            font-size: 1.2rem;
+            color: #8fa89a;
+            max-width: 520px;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+        }
+        .btn-hero-primary {
+            background: var(--verde);
+            color: white;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: .5px;
+            padding: .85rem 2.2rem;
+            border-radius: 10px;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: .6rem;
+            transition: background .2s, transform .15s;
+        }
+        .btn-hero-primary:hover { background: #21a050; color: white; transform: translateY(-2px); }
+        .btn-hero-secondary {
+            background: transparent;
+            color: #8fa89a;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            padding: .85rem 2.2rem;
+            border-radius: 10px;
+            border: 1px solid rgba(143,168,154,.3);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: .6rem;
+            transition: all .2s;
+        }
+        .btn-hero-secondary:hover { border-color: var(--amarillo); color: var(--amarillo); }
+
+        /* ── CANCHA ANIMADA ── */
+        .campo-svg {
+            width: 100%;
+            max-width: 480px;
+            opacity: .85;
+            filter: drop-shadow(0 0 40px rgba(26,124,62,.4));
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-14px); }
+        }
+
+        /* ── STATS BAND ── */
+        .stats-band {
+            background: linear-gradient(90deg, var(--verde-d), var(--verde));
+            padding: 2.5rem 0;
+        }
+        .stat-item { text-align: center; }
+        .stat-num {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--amarillo);
+            line-height: 1;
+        }
+        .stat-lbl { font-size: .9rem; color: #c8e6d0; margin-top: .3rem; }
+
+        /* ── FEATURES ── */
+        .features { background: #0d1510; padding: 5rem 0; }
+        .features h2 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: .75rem;
+        }
+        .features h2 span { color: var(--amarillo); }
+        .features .lead { text-align: center; color: #6b8577; margin-bottom: 3.5rem; }
+
+        .feature-card {
+            background: rgba(26,124,62,.07);
+            border: 1px solid rgba(26,124,62,.2);
+            border-radius: 16px;
+            padding: 2rem;
+            height: 100%;
+            transition: border-color .3s, transform .3s;
+        }
+        .feature-card:hover {
+            border-color: var(--verde);
+            transform: translateY(-6px);
+        }
+        .feature-icon {
+            width: 56px; height: 56px;
+            background: rgba(26,124,62,.2);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            color: var(--amarillo);
+            margin-bottom: 1.2rem;
+        }
+        .feature-card h5 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: .6rem;
+            color: white;
+        }
+        .feature-card p { color: #6b8577; font-size: .95rem; line-height: 1.6; margin: 0; }
+
+        /* ── RELACIONES JPA ── */
+        .jpa-section { background: #0a0f0d; padding: 5rem 0; }
+        .jpa-section h2 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: .75rem;
+        }
+        .jpa-section h2 span { color: var(--amarillo); }
+        .jpa-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            background: rgba(26,124,62,.12);
+            border: 1px solid rgba(26,124,62,.3);
+            border-radius: 10px;
+            padding: 1rem 1.4rem;
+            margin: .4rem;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1rem;
+            color: #b0d4be;
+            transition: all .2s;
+        }
+        .jpa-badge:hover { background: rgba(26,124,62,.25); border-color: var(--verde); color: white; }
+        .jpa-badge .ann { color: var(--amarillo); font-size: .85rem; }
+
+        /* ── TECH STACK ── */
+        .tech-section { background: #0d1510; padding: 4rem 0; }
+        .tech-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 30px;
+            padding: .5rem 1.2rem;
+            margin: .3rem;
+            font-size: .9rem;
+            color: #8fa89a;
+        }
+        .tech-pill i { color: var(--amarillo); }
+
+        /* ── CTA ── */
+        .cta-section {
+            background:
+                radial-gradient(ellipse at center, rgba(26,124,62,.3) 0%, transparent 70%),
+                #0a0f0d;
+            padding: 6rem 0;
+            text-align: center;
+        }
+        .cta-section h2 {
+            font-family: 'Oswald', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1rem;
+        }
+        .cta-section h2 span { color: var(--amarillo); }
+        .cta-section p { color: #6b8577; font-size: 1.1rem; margin-bottom: 2.5rem; }
+
+        /* ── FOOTER ── */
+        footer {
+            background: #070c09;
+            border-top: 1px solid rgba(26,124,62,.2);
+            padding: 2rem 0;
+            text-align: center;
+            color: #3d5445;
+            font-size: .85rem;
+        }
+        footer span { color: var(--verde); }
+    </style>
+</head>
+<body>
+
+<!-- ══════════ NAVBAR ══════════ -->
+<nav class="navbar navbar-expand-lg px-3">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">
+            <i class="bi bi-trophy-fill me-2"></i>FútbolJPA
+        </a>
+        <button class="navbar-toggler border-secondary" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navMain">
+            <i class="bi bi-list text-white fs-4"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navMain">
+            <ul class="navbar-nav ms-auto align-items-center gap-2">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/clubes/listar}">
+                        <i class="bi bi-table me-1"></i>Ver Clubes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="btn-nav nav-link" th:href="@{/clubes/nuevo}">
+                        <i class="bi bi-plus-circle me-1"></i>Registrar Club
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ══════════ HERO ══════════ -->
+<section class="hero">
+    <div class="container position-relative">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <div class="hero-tag"><i class="bi bi-lightning-fill me-1"></i>Spring Boot + JPA</div>
+                <h1>Gestiona tus<br/><span>Clubes de Fútbol</span><br/>con JPA</h1>
+                <p>Registra clubes, entrenadores, jugadores, asociaciones y competiciones. Relaciones JPA completas con H2 en memoria.</p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a th:href="@{/clubes/nuevo}" class="btn-hero-primary">
+                        <i class="bi bi-plus-circle-fill"></i>Registrar Club
+                    </a>
+                    <a th:href="@{/clubes/listar}" class="btn-hero-secondary">
+                        <i class="bi bi-table"></i>Ver Listado
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <!-- Campo de fútbol SVG -->
+                <svg class="campo-svg" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Césped -->
+                    <rect width="400" height="280" rx="12" fill="#1a4a2a"/>
+                    <!-- Líneas del campo -->
+                    <rect x="20" y="20" width="360" height="240" rx="4" fill="none" stroke="#2d7a4a" stroke-width="2"/>
+                    <!-- Círculo central -->
+                    <circle cx="200" cy="140" r="40" fill="none" stroke="#2d7a4a" stroke-width="2"/>
+                    <circle cx="200" cy="140" r="3" fill="#2d7a4a"/>
+                    <!-- Línea central -->
+                    <line x1="200" y1="20" x2="200" y2="260" stroke="#2d7a4a" stroke-width="2"/>
+                    <!-- Área grande izquierda -->
+                    <rect x="20" y="80" width="70" height="120" fill="none" stroke="#2d7a4a" stroke-width="2"/>
+                    <!-- Área chica izquierda -->
+                    <rect x="20" y="110" width="30" height="60" fill="none" stroke="#2d7a4a" stroke-width="2"/>
+                    <!-- Portería izquierda -->
+                    <rect x="14" y="122" width="6" height="36" fill="none" stroke="#f5c518" stroke-width="2"/>
+                    <!-- Área grande derecha -->
+                    <rect x="310" y="80" width="70" height="120" fill="none" stroke="#2d7a4a" stroke-width="2"/>
+                    <!-- Área chica derecha -->
+                    <rect x="350" y="110" width="30" height="60" fill="none" stroke="#2d7a4a" stroke-width="2"/>
+                    <!-- Portería derecha -->
+                    <rect x="380" y="122" width="6" height="36" fill="none" stroke="#f5c518" stroke-width="2"/>
+                    <!-- Punto penal izquierdo -->
+                    <circle cx="65" cy="140" r="3" fill="#2d7a4a"/>
+                    <!-- Punto penal derecho -->
+                    <circle cx="335" cy="140" r="3" fill="#2d7a4a"/>
+                    <!-- Jugadores (puntos) -->
+                    <circle cx="80"  cy="140" r="8" fill="#f5c518" opacity=".9"/>
+                    <circle cx="140" cy="100" r="8" fill="#f5c518" opacity=".9"/>
+                    <circle cx="140" cy="180" r="8" fill="#f5c518" opacity=".9"/>
+                    <circle cx="160" cy="140" r="8" fill="#f5c518" opacity=".9"/>
+                    <circle cx="240" cy="100" r="8" fill="#1a7c3e" stroke="white" stroke-width="2" opacity=".9"/>
+                    <circle cx="240" cy="180" r="8" fill="#1a7c3e" stroke="white" stroke-width="2" opacity=".9"/>
+                    <circle cx="260" cy="140" r="8" fill="#1a7c3e" stroke="white" stroke-width="2" opacity=".9"/>
+                    <circle cx="320" cy="140" r="8" fill="#1a7c3e" stroke="white" stroke-width="2" opacity=".9"/>
+                    <!-- Balón -->
+                    <circle cx="200" cy="140" r="10" fill="white" opacity=".95"/>
+                    <path d="M200 130 L205 137 L200 144 L195 137 Z" fill="#333" opacity=".6"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════ STATS BAND ══════════ -->
+<div class="stats-band">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3 stat-item">
+                <div class="stat-num">4</div>
+                <div class="stat-lbl">Relaciones JPA</div>
+            </div>
+            <div class="col-6 col-md-3 stat-item">
+                <div class="stat-num">5</div>
+                <div class="stat-lbl">Entidades</div>
+            </div>
+            <div class="col-6 col-md-3 stat-item">
+                <div class="stat-num">H2</div>
+                <div class="stat-lbl">Base de Datos</div>
+            </div>
+            <div class="col-6 col-md-3 stat-item">
+                <div class="stat-num">MVC</div>
+                <div class="stat-lbl">Arquitectura</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ FEATURES ══════════ -->
+<section class="features">
+    <div class="container">
+        <h2>Todo lo que <span>necesitas</span></h2>
+        <p class="lead">Un sistema completo de gestión de clubes de fútbol con Spring Boot y JPA.</p>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-shield-fill"></i></div>
+                    <h5>Gestión de Clubes</h5>
+                    <p>Registra clubes con nombre, entrenador, asociación, jugadores y competiciones en un solo formulario.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-people-fill"></i></div>
+                    <h5>Plantel Dinámico</h5>
+                    <p>Agrega jugadores al crear el club o edítalos después. Número de camiseta y posición incluidos.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-trophy-fill"></i></div>
+                    <h5>Competiciones</h5>
+                    <p>Relación ManyToMany entre clubes y competiciones. Un club puede participar en varias ligas.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-diagram-3-fill"></i></div>
+                    <h5>Asociaciones</h5>
+                    <p>Cada club pertenece a una federación o asociación deportiva con país y presidente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════ RELACIONES JPA ══════════ -->
+<section class="jpa-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-5">
+                <h2>Relaciones <span>JPA</span><br/>implementadas</h2>
+                <p class="text-secondary mt-3 mb-4" style="line-height:1.7">
+                    El proyecto implementa las cuatro relaciones fundamentales de JPA entre entidades,
+                    con carga perezosa y eliminación en cascada.
+                </p>
+                <div class="d-flex flex-wrap">
+                    <div class="jpa-badge">
+                        <span class="ann">@OneToOne</span> Club → Entrenador
+                    </div>
+                    <div class="jpa-badge">
+                        <span class="ann">@OneToMany</span> Club → Jugadores
+                    </div>
+                    <div class="jpa-badge">
+                        <span class="ann">@ManyToOne</span> Club → Asociacion
+                    </div>
+                    <div class="jpa-badge">
+                        <span class="ann">@ManyToMany</span> Club ↔ Competicion
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="p-4 rounded-3" style="background:#0d1510; border:1px solid rgba(26,124,62,.2); font-family:monospace; font-size:.88rem; line-height:1.8; color:#8fa89a;">
+                    <div><span style="color:#f5c518">@Entity</span></div>
+                    <div><span style="color:#1a7c3e">public class</span> <span style="color:white">Club</span> {</div>
+                    <div>&nbsp;&nbsp;<span style="color:#f5c518">@OneToOne</span>(fetch = FetchType.<span style="color:#b0d4be">LAZY</span>)</div>
+                    <div>&nbsp;&nbsp;<span style="color:#6b8577">private</span> <span style="color:white">Entrenador</span> entrenador;</div>
+                    <br/>
+                    <div>&nbsp;&nbsp;<span style="color:#f5c518">@OneToMany</span>(fetch = FetchType.<span style="color:#b0d4be">LAZY</span>)</div>
+                    <div>&nbsp;&nbsp;<span style="color:#f5c518">@JoinColumn</span>(name = <span style="color:#c8e6d0">"id_club"</span>)</div>
+                    <div>&nbsp;&nbsp;<span style="color:#6b8577">private</span> List&lt;<span style="color:white">Jugador</span>&gt; jugadores;</div>
+                    <br/>
+                    <div>&nbsp;&nbsp;<span style="color:#f5c518">@ManyToOne</span>(fetch = FetchType.<span style="color:#b0d4be">LAZY</span>)</div>
+                    <div>&nbsp;&nbsp;<span style="color:#6b8577">private</span> <span style="color:white">Asociacion</span> asociacion;</div>
+                    <br/>
+                    <div>&nbsp;&nbsp;<span style="color:#f5c518">@ManyToMany</span>(fetch = FetchType.<span style="color:#b0d4be">LAZY</span>)</div>
+                    <div>&nbsp;&nbsp;<span style="color:#6b8577">private</span> List&lt;<span style="color:white">Competicion</span>&gt; competiciones;</div>
+                    <div>}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════ TECH STACK ══════════ -->
+<section class="tech-section">
+    <div class="container text-center">
+        <h5 class="text-secondary mb-4" style="font-family:'Oswald',sans-serif; letter-spacing:2px; font-size:.9rem; text-transform:uppercase">
+            Tecnologías utilizadas
+        </h5>
+        <div>
+            <span class="tech-pill"><i class="bi bi-leaf-fill"></i>Spring Boot 3.2</span>
+            <span class="tech-pill"><i class="bi bi-database-fill"></i>Spring Data JPA</span>
+            <span class="tech-pill"><i class="bi bi-hdd-fill"></i>H2 Database</span>
+            <span class="tech-pill"><i class="bi bi-file-code-fill"></i>Thymeleaf</span>
+            <span class="tech-pill"><i class="bi bi-bootstrap-fill"></i>Bootstrap 5</span>
+            <span class="tech-pill"><i class="bi bi-cup-hot-fill"></i>Java 17</span>
+            <span class="tech-pill"><i class="bi bi-boxes"></i>Hibernate 6</span>
+            <span class="tech-pill"><i class="bi bi-gear-fill"></i>Maven</span>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════ CTA ══════════ -->
+<section class="cta-section">
+    <div class="container">
+        <h2>¿Listo para <span>empezar</span>?</h2>
+        <p>Registra tu primer club y explora todas las relaciones JPA en acción.</p>
+        <div class="d-flex justify-content-center flex-wrap gap-3">
+            <a th:href="@{/clubes/nuevo}" class="btn-hero-primary">
+                <i class="bi bi-plus-circle-fill"></i>Registrar Primer Club
+            </a>
+            <a th:href="@{/clubes/listar}" class="btn-hero-secondary">
+                <i class="bi bi-table"></i>Ver Listado
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer>
+    <div class="container">
+        <p>
+            <span><i class="bi bi-trophy-fill me-1"></i>FútbolJPA</span>
+            &nbsp;·&nbsp; Spring Boot + JPA + H2 + Thymeleaf + Bootstrap 5
+            &nbsp;·&nbsp; Relaciones JPA Spring Framework
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
